@@ -155,6 +155,15 @@ return {
   -- Description: A Neovim plugin for creating a customizable dashboard.
   {
     "folke/snacks.nvim",
+    keys = {
+      {
+        "<leader>fb",
+        function()
+          Snacks.picker.buffers()
+        end,
+        desc = "Find Buffers",
+      },
+    },
     opts = {
       image = {},
       picker = {
