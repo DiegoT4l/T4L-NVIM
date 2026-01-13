@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Gentleman-Programming/Gentleman.Dots/installer/internal/system"
 	"github.com/Gentleman-Programming/Gentleman.Dots/installer/internal/tui/trainer"
@@ -205,8 +206,23 @@ func SetGlobalProgram(p *tea.Program) {
 	globalProgram = p
 }
 
+// nonInteractiveMode indicates if we're running without TUI
+var nonInteractiveMode bool
+
+// SetNonInteractiveMode enables or disables non-interactive mode
+func SetNonInteractiveMode(enabled bool) {
+	nonInteractiveMode = enabled
+}
+
 // SendLog sends a log message to the TUI during installation
 func SendLog(stepID string, log string) {
+	if nonInteractiveMode {
+		// In non-interactive mode, print to stdout if verbose
+		if os.Getenv("GENTLEMAN_VERBOSE") == "1" {
+			fmt.Printf("    %s\n", log)
+		}
+		return
+	}
 	if globalProgram != nil {
 		globalProgram.Send(stepProgressMsg{
 			stepID: stepID,
@@ -242,12 +258,15 @@ func (m Model) GetCurrentOptions() []string {
 	case ScreenOSSelect:
 		macLabel := "macOS"
 		linuxLabel := "Linux"
+		termuxLabel := "Termux"
 		if m.SystemInfo.OS == system.OSMac {
 			macLabel = "macOS (detected)"
-		} else if m.SystemInfo.OS == system.OSLinux {
+		} else if m.SystemInfo.OS == system.OSTermux {
+			termuxLabel = "Termux (detected)"
+		} else if m.SystemInfo.OS == system.OSLinux || m.SystemInfo.OS == system.OSArch || m.SystemInfo.OS == system.OSDebian || m.SystemInfo.OS == system.OSFedora {
 			linuxLabel = "Linux (detected)"
 		}
-		return []string{macLabel, linuxLabel}
+		return []string{macLabel, linuxLabel, termuxLabel}
 	case ScreenTerminalSelect:
 		alacrittyLabel := "Alacritty"
 		// On Debian/Ubuntu, Alacritty needs to be built from source (PPAs are unreliable)
@@ -493,7 +512,8 @@ func (m *Model) SetupInstallSteps() {
 	})
 
 	// Homebrew (interactive - first install needs password)
-	if !m.SystemInfo.HasBrew {
+	// Skip for Termux - it uses pkg instead
+	if !m.SystemInfo.HasBrew && !m.SystemInfo.IsTermux {
 		m.Steps = append(m.Steps, InstallStep{
 			ID:          "homebrew",
 			Name:        "Install Homebrew",
@@ -504,13 +524,23 @@ func (m *Model) SetupInstallSteps() {
 	}
 
 	// Dependencies based on OS
-	if m.Choices.OS == "linux" {
+	// Check both Choices.OS and SystemInfo for Termux detection (redundancy)
+	isTermux := m.Choices.OS == "termux" || m.SystemInfo.IsTermux
+	if m.Choices.OS == "linux" && !isTermux {
 		m.Steps = append(m.Steps, InstallStep{
 			ID:          "deps",
 			Name:        "Install Dependencies",
 			Description: "Base packages",
 			Status:      StatusPending,
 			Interactive: true, // Needs sudo
+		})
+	} else if isTermux {
+		m.Steps = append(m.Steps, InstallStep{
+			ID:          "deps",
+			Name:        "Install Dependencies",
+			Description: "Base packages (pkg)",
+			Status:      StatusPending,
+			Interactive: false, // Termux doesn't need sudo
 		})
 	} else if m.Choices.OS == "mac" && !m.SystemInfo.HasXcode {
 		m.Steps = append(m.Steps, InstallStep{

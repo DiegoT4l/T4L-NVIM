@@ -63,13 +63,13 @@ func getHomebrewScript(m *Model) (string, error) {
 	}
 
 	brewPrefix := system.GetBrewPrefix()
-	script := fmt.Sprintf(`#!/bin/bash
+	script := fmt.Sprintf(`#!/bin/sh
 set -e
 echo ""
 echo "🍺 Installing Homebrew package manager..."
 echo "   (You may be prompted for your password)"
 echo ""
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+/bin/sh -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 echo ""
 echo "📝 Configuring shell to use Homebrew..."
@@ -93,7 +93,7 @@ echo ""
 echo "✅ Homebrew installed successfully!"
 echo ""
 echo "Press Enter to continue..."
-read
+read dummy
 `, brewPrefix, brewPrefix)
 
 	return script, nil
@@ -104,7 +104,7 @@ func getDepsScript(m *Model) (string, error) {
 	var script string
 
 	if m.SystemInfo.OS == system.OSArch {
-		script = `#!/bin/bash
+		script = `#!/bin/sh
 set -e
 echo ""
 echo "🔄 Updating Arch Linux packages..."
@@ -118,11 +118,29 @@ echo ""
 echo "✅ Dependencies installed successfully!"
 echo ""
 echo "Press Enter to continue..."
-read
+read dummy
+`
+	} else if m.SystemInfo.OS == system.OSFedora {
+		// Fedora/RHEL
+		script = `#!/bin/sh
+set -e
+echo ""
+echo "🔄 Checking for Fedora/RHEL updates..."
+echo "   (You may be prompted for your password)"
+echo ""
+sudo dnf check-update || true
+echo ""
+echo "📦 Installing base dependencies..."
+sudo dnf install -y @development-tools curl file git wget unzip fontconfig
+echo ""
+echo "✅ Dependencies installed successfully!"
+echo ""
+echo "Press Enter to continue..."
+read dummy
 `
 	} else {
 		// Debian/Ubuntu
-		script = `#!/bin/bash
+		script = `#!/bin/sh
 set -e
 echo ""
 echo "🔄 Updating apt package list..."
@@ -136,7 +154,7 @@ echo ""
 echo "✅ Dependencies installed successfully!"
 echo ""
 echo "Press Enter to continue..."
-read
+read dummy
 `
 	}
 
@@ -157,6 +175,8 @@ func getTerminalScript(m *Model) (string, error) {
 			installCmd = `echo "✓ Alacritty already installed"`
 		} else if m.SystemInfo.OS == system.OSArch {
 			installCmd = `sudo pacman -S --noconfirm alacritty`
+		} else if m.SystemInfo.OS == system.OSFedora {
+			installCmd = `sudo dnf install -y alacritty`
 		} else {
 			// Debian/Ubuntu: compile from source (PPAs are unreliable)
 			installCmd = `echo "📦 Installing build dependencies..."
@@ -198,6 +218,9 @@ cp "Gentleman.Dots/alacritty.toml" "%s/.config/alacritty/alacritty.toml"`, homeD
 			installCmd = `echo "✓ WezTerm already installed"`
 		} else if m.SystemInfo.OS == system.OSArch {
 			installCmd = `sudo pacman -S --noconfirm wezterm`
+		} else if m.SystemInfo.OS == system.OSFedora {
+			installCmd = `sudo dnf copr enable -y wezfurlong/wezterm-nightly
+sudo dnf install -y wezterm`
 		} else {
 			// Debian uses brew, not interactive
 			return "", nil
@@ -210,6 +233,9 @@ cp "Gentleman.Dots/.wezterm.lua" "%s/.config/wezterm/wezterm.lua"`, homeDir, hom
 			installCmd = `echo "✓ Ghostty already installed"`
 		} else if m.SystemInfo.OS == system.OSArch {
 			installCmd = `sudo pacman -S --noconfirm ghostty`
+		} else if m.SystemInfo.OS == system.OSFedora {
+			installCmd = `sudo dnf copr enable -y pgdev/ghostty
+sudo dnf install -y ghostty`
 		} else {
 			// Debian uses install script
 			installCmd = `curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/HEAD/install.sh | bash`
@@ -221,7 +247,7 @@ cp -r Gentleman.Dots/GentlemanGhostty/* "%s/.config/ghostty/"`, homeDir, homeDir
 		return "", nil
 	}
 
-	script := fmt.Sprintf(`#!/bin/bash
+	script := fmt.Sprintf(`#!/bin/sh
 set -e
 echo ""
 echo "🖥️  Installing %s..."
@@ -235,7 +261,7 @@ echo ""
 echo "✅ %s configured!"
 echo ""
 echo "Press Enter to continue..."
-read
+read dummy
 `, terminal, installCmd, terminal, configCmd, terminal)
 
 	return script, nil
@@ -257,9 +283,14 @@ func getSetShellScript(m *Model) (string, error) {
 		return "", fmt.Errorf("unknown shell: %s", shell)
 	}
 
+	// Termux: no chsh, we modify ~/.bashrc to start the shell
+	if m.SystemInfo.IsTermux {
+		return getSetShellScriptTermux(shellCmd)
+	}
+
 	brewPrefix := system.GetBrewPrefix()
 
-	script := fmt.Sprintf(`#!/bin/bash
+	script := fmt.Sprintf(`#!/bin/sh
 set -e
 
 # Add brew to PATH for this script
@@ -271,7 +302,7 @@ if [ -z "$SHELL_PATH" ]; then
     echo "❌ Shell '%s' not found in PATH"
     echo ""
     echo "Press Enter to continue..."
-    read
+    read dummy
     exit 1
 fi
 
@@ -297,8 +328,55 @@ echo "✅ Default shell changed to $SHELL_PATH"
 echo "   Please log out and log back in for changes to take effect."
 echo ""
 echo "Press Enter to continue..."
-read
+read dummy
 `, brewPrefix, shellCmd, shellCmd)
+
+	return script, nil
+}
+
+// getSetShellScriptTermux returns script to set default shell in Termux
+// Termux doesn't have chsh, so we add shell launch to ~/.bashrc
+func getSetShellScriptTermux(shellCmd string) (string, error) {
+	script := fmt.Sprintf(`#!/data/data/com.termux/files/usr/bin/sh
+set -e
+
+SHELL_PATH=$(which %s 2>/dev/null)
+
+if [ -z "$SHELL_PATH" ]; then
+    echo "❌ Shell '%s' not found in PATH"
+    echo ""
+    echo "Press Enter to continue..."
+    read dummy
+    exit 1
+fi
+
+echo ""
+echo "🐚 Setting $SHELL_PATH as your default shell in Termux..."
+echo ""
+
+# Termux doesn't have chsh, so we add to ~/.bashrc
+BASHRC="$HOME/.bashrc"
+
+# Check if already configured
+if grep -q "# Gentleman.Dots shell auto-start" "$BASHRC" 2>/dev/null; then
+    echo "Shell auto-start already configured in ~/.bashrc"
+else
+    echo "" >> "$BASHRC"
+    echo "# Gentleman.Dots shell auto-start" >> "$BASHRC"
+    echo "if [ -x \"$SHELL_PATH\" ] && [ -z \"\$GENTLEMANDOTS_SHELL_STARTED\" ]; then" >> "$BASHRC"
+    echo "    export GENTLEMANDOTS_SHELL_STARTED=1" >> "$BASHRC"
+    echo "    exec $SHELL_PATH" >> "$BASHRC"
+    echo "fi" >> "$BASHRC"
+    echo "✅ Added shell auto-start to ~/.bashrc"
+fi
+
+echo ""
+echo "✅ Default shell set to $SHELL_PATH"
+echo "   Close and reopen Termux for changes to take effect."
+echo ""
+echo "Press Enter to continue..."
+read dummy
+`, shellCmd, shellCmd)
 
 	return script, nil
 }
@@ -325,8 +403,9 @@ func createTempScriptCommand(script string) (*exec.Cmd, error) {
 		return nil, fmt.Errorf("failed to make script executable: %w", err)
 	}
 
-	// Return command - use bash explicitly
-	cmd := exec.Command("bash", tmpFile.Name())
+	// Return command - use available shell (bash, sh, or zsh)
+	shellPath := system.GetShell()
+	cmd := exec.Command(shellPath, tmpFile.Name())
 	cmd.Env = os.Environ()
 
 	return cmd, nil

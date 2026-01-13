@@ -7,9 +7,51 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
+
+// shellPath caches the detected shell path
+var (
+	shellPath     string
+	shellPathOnce sync.Once
+)
+
+// GetShell returns the path to an available shell (bash, sh, or zsh)
+// Caches the result for subsequent calls
+func GetShell() string {
+	shellPathOnce.Do(func() {
+		// In Termux, prefer sh to avoid fork/exec issues with bash
+		// Go has known issues with fork/exec on Android
+		if isTermux() {
+			if path, err := exec.LookPath("sh"); err == nil {
+				shellPath = path
+				return
+			}
+		}
+
+		// Try bash first (most compatible with our commands)
+		if path, err := exec.LookPath("bash"); err == nil {
+			shellPath = path
+			return
+		}
+		// Fall back to sh (available on almost all Unix systems including Termux)
+		if path, err := exec.LookPath("sh"); err == nil {
+			shellPath = path
+			return
+		}
+		// Last resort: zsh
+		if path, err := exec.LookPath("zsh"); err == nil {
+			shellPath = path
+			return
+		}
+		// Default to sh if nothing found (let it fail with a clear error)
+		shellPath = "sh"
+	})
+	return shellPath
+}
 
 // ExecError provides detailed error information for command execution
 type ExecError struct {
@@ -56,6 +98,53 @@ type ExecOptions struct {
 	Timeout    time.Duration
 }
 
+// parseCommand splits a command string into executable and arguments
+// This is a simple parser that handles basic quoting
+func parseCommand(command string) (string, []string) {
+	var args []string
+	var current strings.Builder
+	inQuote := false
+	quoteChar := rune(0)
+
+	for _, r := range command {
+		if (r == '"' || r == '\'') && !inQuote {
+			inQuote = true
+			quoteChar = r
+		} else if r == quoteChar && inQuote {
+			inQuote = false
+			quoteChar = 0
+		} else if r == ' ' && !inQuote {
+			if current.Len() > 0 {
+				args = append(args, current.String())
+				current.Reset()
+			}
+		} else {
+			current.WriteRune(r)
+		}
+	}
+	if current.Len() > 0 {
+		args = append(args, current.String())
+	}
+
+	if len(args) == 0 {
+		return "", nil
+	}
+
+	// In Termux, resolve executable path using $PREFIX/bin
+	executable := args[0]
+	if isTermux() {
+		prefix := os.Getenv("PREFIX")
+		if prefix != "" {
+			fullPath := prefix + "/bin/" + executable
+			if _, err := os.Stat(fullPath); err == nil {
+				executable = fullPath
+			}
+		}
+	}
+
+	return executable, args[1:]
+}
+
 // Run executes a command and returns the result with detailed error information
 func Run(command string, opts *ExecOptions) *ExecResult {
 	if opts == nil {
@@ -74,8 +163,16 @@ func Run(command string, opts *ExecOptions) *ExecResult {
 		defer cancel()
 	}
 
-	// Use bash -c to run the command
-	cmd := exec.CommandContext(ctx, "bash", "-c", command)
+	// In Termux, execute commands directly without shell wrapper
+	// Go has issues with fork/exec through shell on Android
+	var cmd *exec.Cmd
+	if isTermux() {
+		executable, args := parseCommand(command)
+		cmd = exec.CommandContext(ctx, executable, args...)
+	} else {
+		// Use available shell to run the command (bash, sh, or zsh)
+		cmd = exec.CommandContext(ctx, GetShell(), "-c", command)
+	}
 
 	if opts.WorkDir != "" {
 		cmd.Dir = opts.WorkDir
@@ -170,6 +267,21 @@ func RunBrew(args string, opts *ExecOptions) *ExecResult {
 	return Run(brewPath+" "+args, opts)
 }
 
+// RunPkg runs a Termux pkg command (install packages)
+func RunPkg(args string, opts *ExecOptions) *ExecResult {
+	return Run("pkg "+args, opts)
+}
+
+// RunPkgWithLogs runs a Termux pkg command with log streaming
+func RunPkgWithLogs(args string, opts *ExecOptions, logFunc func(string)) *ExecResult {
+	return RunWithLogs("pkg "+args, opts, logFunc)
+}
+
+// RunPkgInstall runs pkg install with -y flag for non-interactive installs
+func RunPkgInstall(packages string, opts *ExecOptions, logFunc func(string)) *ExecResult {
+	return RunWithLogs("pkg install -y "+packages, opts, logFunc)
+}
+
 // CopyFile copies a file from src to dst
 func CopyFile(src, dst string) error {
 	input, err := os.ReadFile(src)
@@ -179,10 +291,30 @@ func CopyFile(src, dst string) error {
 	return os.WriteFile(dst, input, 0644)
 }
 
-// CopyDir recursively copies a directory
+// CopyDir recursively copies a directory using native Go (shell-independent)
 func CopyDir(src, dst string) error {
-	result := Run(fmt.Sprintf("cp -r %s %s", src, dst), nil)
-	return result.Error
+	// Clean paths - remove trailing /* or /. if present
+	src = strings.TrimSuffix(strings.TrimSuffix(src, "/*"), "/.")
+
+	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Calculate destination path
+		relPath, err := filepath.Rel(src, path)
+		if err != nil {
+			return err
+		}
+		dstPath := filepath.Join(dst, relPath)
+
+		if info.IsDir() {
+			return os.MkdirAll(dstPath, info.Mode())
+		}
+
+		// Copy file
+		return CopyFile(path, dstPath)
+	})
 }
 
 // EnsureDir creates a directory if it doesn't exist
@@ -384,7 +516,14 @@ func RunWithLogs(command string, opts *ExecOptions, onLog LogCallback) *ExecResu
 		defer cancel()
 	}
 
-	cmd := exec.CommandContext(ctx, "bash", "-c", command)
+	// In Termux, execute commands directly without shell wrapper
+	var cmd *exec.Cmd
+	if isTermux() {
+		executable, args := parseCommand(command)
+		cmd = exec.CommandContext(ctx, executable, args...)
+	} else {
+		cmd = exec.CommandContext(ctx, GetShell(), "-c", command)
+	}
 
 	if opts.WorkDir != "" {
 		cmd.Dir = opts.WorkDir
@@ -484,4 +623,225 @@ func RunBrewWithLogs(args string, opts *ExecOptions, onLog LogCallback) *ExecRes
 // RunSudoWithLogs runs a sudo command with log streaming
 func RunSudoWithLogs(command string, opts *ExecOptions, onLog LogCallback) *ExecResult {
 	return RunWithLogs("sudo "+command, opts, onLog)
+}
+
+// PatchZshForWM modifies .zshrc based on window manager choice
+// If wm is "none", removes WM-related lines
+// If wm is "zellij", changes tmux references to zellij
+// If wm is "tmux", leaves as-is (default)
+func PatchZshForWM(zshrcPath string, wm string, installNvim bool) error {
+	content, err := os.ReadFile(zshrcPath)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	var newLines []string
+
+	// Lines to remove if WM is "none"
+	wmLinesToRemove := map[string]bool{
+		`WM_VAR="/$TMUX"`:      true,
+		`WM_VAR="$ZELLIJ"`:     true,
+		`WM_CMD="tmux"`:        true,
+		`WM_CMD="zellij"`:      true,
+		`# change with ZELLIJ`: true,
+		`# change with zellij`: true,
+		`start_if_needed`:      true,
+	}
+
+	inStartIfNeeded := false
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		// Handle fzf line - wrap with command check if nvim not installed
+		if strings.Contains(line, `eval "$(fzf --zsh)"`) {
+			if !installNvim {
+				newLines = append(newLines, `if command -v fzf &> /dev/null; then`)
+				newLines = append(newLines, line)
+				newLines = append(newLines, `fi`)
+			} else {
+				newLines = append(newLines, line)
+			}
+			continue
+		}
+
+		// Handle WM based on choice
+		if wm == "none" {
+			// Skip WM-related lines entirely
+			if wmLinesToRemove[trimmed] {
+				continue
+			}
+			// Skip function start_if_needed block
+			if strings.HasPrefix(trimmed, "function start_if_needed") {
+				inStartIfNeeded = true
+				continue
+			}
+			if inStartIfNeeded {
+				if trimmed == "}" {
+					inStartIfNeeded = false
+				}
+				continue
+			}
+			// Skip the call to start_if_needed
+			if trimmed == "start_if_needed" {
+				continue
+			}
+			newLines = append(newLines, line)
+		} else if wm == "zellij" {
+			// Replace tmux with zellij
+			modified := line
+			if strings.Contains(line, `WM_VAR="/$TMUX"`) {
+				modified = `WM_VAR="$ZELLIJ"`
+			} else if strings.Contains(line, `WM_CMD="tmux"`) {
+				modified = `WM_CMD="zellij"`
+			} else if strings.Contains(line, "# change with ZELLIJ") {
+				continue // Remove this comment
+			} else if strings.Contains(line, "# change with zellij") {
+				continue // Remove this comment
+			}
+			newLines = append(newLines, modified)
+		} else {
+			// tmux is default, keep as-is
+			newLines = append(newLines, line)
+		}
+	}
+
+	return os.WriteFile(zshrcPath, []byte(strings.Join(newLines, "\n")), 0644)
+}
+
+// PatchFishForWM modifies config.fish based on window manager choice
+func PatchFishForWM(configPath string, wm string, installNvim bool) error {
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	var newLines []string
+
+	inTmuxBlock := false
+	inZellijBlock := false
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		// Handle fzf line
+		if strings.Contains(line, "fzf --fish | source") {
+			if !installNvim {
+				newLines = append(newLines, `if command -v fzf &> /dev/null`)
+				newLines = append(newLines, line)
+				newLines = append(newLines, `end`)
+			} else {
+				newLines = append(newLines, line)
+			}
+			continue
+		}
+
+		if wm == "none" {
+			// Skip tmux block
+			if trimmed == "if not set -q TMUX" {
+				inTmuxBlock = true
+				continue
+			}
+			if inTmuxBlock {
+				if trimmed == "end" {
+					inTmuxBlock = false
+				}
+				continue
+			}
+			// Skip zellij commented block
+			if strings.HasPrefix(trimmed, "#if not set -q ZELLIJ") || strings.HasPrefix(trimmed, "#  zellij") || strings.HasPrefix(trimmed, "#end") {
+				continue
+			}
+			newLines = append(newLines, line)
+		} else if wm == "zellij" {
+			// Comment out tmux, uncomment zellij
+			if trimmed == "if not set -q TMUX" {
+				inTmuxBlock = true
+				continue
+			}
+			if inTmuxBlock {
+				if trimmed == "end" {
+					inTmuxBlock = false
+				}
+				continue
+			}
+			// Uncomment zellij block
+			if trimmed == "#if not set -q ZELLIJ" {
+				newLines = append(newLines, "if not set -q ZELLIJ")
+				inZellijBlock = true
+				continue
+			}
+			if inZellijBlock && strings.HasPrefix(trimmed, "#") {
+				if trimmed == "#end" {
+					newLines = append(newLines, "end")
+					inZellijBlock = false
+				} else {
+					// Remove leading # and space
+					newLines = append(newLines, strings.TrimPrefix(trimmed, "#"))
+				}
+				continue
+			}
+			newLines = append(newLines, line)
+		} else {
+			// tmux - keep as is
+			newLines = append(newLines, line)
+		}
+	}
+
+	return os.WriteFile(configPath, []byte(strings.Join(newLines, "\n")), 0644)
+}
+
+// PatchNushellForWM modifies config.nu based on window manager choice
+func PatchNushellForWM(configPath string, wm string) error {
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	var newLines []string
+
+	inMultiplexerBlock := false
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+
+		if wm == "none" {
+			// Skip multiplexer-related lines
+			if strings.HasPrefix(trimmed, "let MULTIPLEXER =") ||
+				strings.HasPrefix(trimmed, "let MULTIPLEXER_ENV_PREFIX =") {
+				continue
+			}
+			if strings.HasPrefix(trimmed, "def start_multiplexer") {
+				inMultiplexerBlock = true
+				continue
+			}
+			if inMultiplexerBlock {
+				if trimmed == "}" {
+					inMultiplexerBlock = false
+				}
+				continue
+			}
+			if trimmed == "start_multiplexer" {
+				continue
+			}
+			newLines = append(newLines, line)
+		} else if wm == "zellij" {
+			// Replace tmux with zellij
+			if strings.Contains(line, `let MULTIPLEXER = "tmux"`) {
+				newLines = append(newLines, `let MULTIPLEXER = "zellij"`)
+			} else if strings.Contains(line, `let MULTIPLEXER_ENV_PREFIX = "TMUX"`) {
+				newLines = append(newLines, `let MULTIPLEXER_ENV_PREFIX = "ZELLIJ"`)
+			} else {
+				newLines = append(newLines, line)
+			}
+		} else {
+			// tmux - keep as is
+			newLines = append(newLines, line)
+		}
+	}
+
+	return os.WriteFile(configPath, []byte(strings.Join(newLines, "\n")), 0644)
 }

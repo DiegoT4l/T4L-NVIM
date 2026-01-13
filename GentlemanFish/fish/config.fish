@@ -8,7 +8,16 @@ if status is-interactive
 
 end
 
-if test (uname) = Darwin
+# Detect Termux
+set -l IS_TERMUX 0
+if test -n "$TERMUX_VERSION"; or test -d /data/data/com.termux
+    set IS_TERMUX 1
+end
+
+if test $IS_TERMUX -eq 1
+    # Termux - use PREFIX for binaries
+    set -x PATH $PREFIX/bin $HOME/.local/bin $HOME/.cargo/bin $PATH
+else if test (uname) = Darwin
     # macOS - check for Apple Silicon vs Intel
     if test -f /opt/homebrew/bin/brew
         # Apple Silicon (M1/M2/M3)
@@ -17,32 +26,36 @@ if test (uname) = Darwin
         # Intel Mac
         set BREW_BIN /usr/local/bin/brew
     end
+    set -x PATH $HOME/.local/bin $HOME/.opencode/bin $HOME/.volta/bin $HOME/.bun/bin $HOME/.nix-profile/bin /nix/var/nix/profiles/default/bin /usr/local/bin $HOME/.config $HOME/.cargo/bin /usr/local/lib/* $PATH
 else
     # Linux
     set BREW_BIN /home/linuxbrew/.linuxbrew/bin/brew
+    set -x PATH $HOME/.local/bin $HOME/.opencode/bin $HOME/.volta/bin $HOME/.bun/bin $HOME/.nix-profile/bin /nix/var/nix/profiles/default/bin /usr/local/bin $HOME/.config $HOME/.cargo/bin /usr/local/lib/* $PATH
 end
 
-set -x PATH $HOME/.local/bin $HOME/.opencode/bin $HOME/.volta/bin $HOME/.bun/bin $HOME/.nix-profile/bin /nix/var/nix/profiles/default/bin /usr/local/bin $HOME/.config $HOME/.cargo/bin /usr/local/lib/* $PATH
-
-# Only eval brew shellenv if brew is installed
-if set -q BREW_BIN; and test -f $BREW_BIN
+# Only eval brew shellenv if brew is installed (not on Termux)
+if test $IS_TERMUX -eq 0; and set -q BREW_BIN; and test -f $BREW_BIN
     eval ($BREW_BIN shellenv)
 end
 
+# Start tmux/zellij
 if not set -q TMUX
     tmux
 end
 
-#if not set -q ZELLIJ 
-#  zellij
+#if not set -q ZELLIJ
+#    zellij
 #end
 
+# Initialize tools
 starship init fish | source
 zoxide init fish | source
 atuin init fish | source
 fzf --fish | source
 
 set -x PATH $HOME/.cargo/bin $PATH
+
+# Carapace completions
 set -Ux CARAPACE_BRIDGES 'zsh,fish,bash,inshellisense'
 
 if not test -d ~/.config/fish/completions
