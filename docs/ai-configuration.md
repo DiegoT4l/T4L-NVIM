@@ -30,7 +30,7 @@ This configuration includes several AI assistants integrated with Neovim. By def
 | Plugin | Description | Status |
 |--------|-------------|--------|
 | **Claude Code.nvim** | Claude AI integration (official) | ✅ Enabled by default |
-| **OpenCode.nvim** | OpenCode AI integration | Disabled (requires API keys) |
+| **OpenCode.nvim** | OpenCode AI integration | Disabled |
 | **Avante.nvim** | AI-powered coding assistant | Disabled |
 | **CopilotChat.nvim** | GitHub Copilot chat interface | Disabled |
 | **CodeCompanion.nvim** | Multi-AI provider support | Disabled |
@@ -59,7 +59,7 @@ nvim ~/.config/nvim/lua/plugins/disabled.lua
 },
 {
   "NickvanDyke/opencode.nvim",
-  enabled = true,   -- Enable OpenCode (requires API keys)
+  enabled = true,   -- Enable OpenCode
 },
 ```
 
@@ -82,7 +82,7 @@ These are automatically installed by the installer script:
 | Use Case | Recommended Plugin |
 |----------|-------------------|
 | Full Gentleman experience | **Claude Code.nvim** (default) |
-| OpenAI/other API keys | **OpenCode.nvim** |
+| OpenCode CLI in terminal | **OpenCode.nvim** |
 | GitHub Copilot users | **CopilotChat.nvim** |
 | Multi-provider flexibility | **CodeCompanion.nvim** |
 | Google Gemini users | **Gemini.nvim** |

@@ -148,11 +148,10 @@ else
   BAR_COLOR="$SUCCESS"
 fi
 
-BAR="${BAR_COLOR}"
-for ((i=0; i<FILLED; i++)); do BAR+="█"; done
-BAR+="${MUTED}"
-for ((i=0; i<EMPTY; i++)); do BAR+="░"; done
-BAR+="${NC}"
+BAR="${BAR_COLOR}["
+for ((i=0; i<FILLED; i++)); do BAR+="="; done
+for ((i=0; i<EMPTY; i++)); do BAR+="."; done
+BAR+="]${NC}"
 
 # Build status line
 SEP="${MUTED}  ${NC}"
@@ -172,4 +171,5 @@ LINE+="${SUCCESS}+${ADDED}${NC} ${ERROR}-${REMOVED}${NC}"
 LINE+="${SEP}"
 LINE+="${MUTED}ctx${NC} ${BAR} ${MUTED}${CTX_PERCENT}%${NC}"
 
-echo -e "$LINE"
+# Clear to end of line to prevent artifacts from previous renders
+echo -e "${LINE}\033[K"

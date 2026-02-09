@@ -32,7 +32,7 @@ The Gentleman.Dots TUI Installer is a modern, interactive terminal application b
 
 ```bash
 brew install Gentleman-Programming/tap/gentleman-dots
-gentleman.dots
+gentleman-dots
 ```
 
 ### Option 2: Download Pre-built Binary
@@ -244,6 +244,35 @@ Backups must be in your home directory with the format:
 1. Ensure the terminal is using "Iosevka Term Nerd Font"
 2. Restart your terminal after font installation
 3. On macOS, you may need to manually select the font in terminal preferences
+
+### Copy/Paste Not Working in Zellij (Linux)
+
+If you can't copy text from the terminal when using Zellij on Linux:
+
+1. Edit `~/.config/zellij/config.kdl`
+2. Uncomment the appropriate line for your system:
+   - **X11**: `copy_command "xclip -selection clipboard"` AND `copy_clipboard "primary"`
+   - **Wayland**: `copy_command "wl-copy"`
+
+See: [Zellij FAQ](https://zellij.dev/documentation/faq.html#copy--paste-isnt-working-how-can-i-fix-this)
+
+### Fish/Zsh Fails in WSL with "missing or unsuitable terminal"
+
+When using WezTerm on Windows with WSL, Fish or Zsh may fail with:
+```
+missing or unsuitable terminal: wezterm
+```
+
+**Status**: ✅ Fixed automatically in the default `.wezterm.lua` config (v2.7.7+).
+
+If you're using an older config, update your `.wezterm.lua` to include the auto-detection:
+```lua
+if wezterm.target_triple:find("windows") then
+  config.term = "xterm-256color"
+else
+  config.term = "wezterm"
+end
+```
 
 ## Development
 
