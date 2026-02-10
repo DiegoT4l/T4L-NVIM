@@ -1,427 +1,35 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "theme": "gentleman",
-  "autoupdate": true,
-  "permission": {
-    "bash": {
-      "*": "allow",
-      "git commit *": "ask",
-      "git push *": "ask",
-      "git push": "ask",
-      "git push --force *": "ask",
-      "git rebase *": "ask",
-      "git reset --hard *": "ask"
-    },
-    "read": {
-      "*": "allow",
-      "*.env": "deny",
-      "*.env.*": "deny",
-      "**/.env": "deny",
-      "**/.env.*": "deny",
-      "**/secrets/**": "deny",
-      "**/credentials.json": "deny"
-    }
-  },
-  "mcp": {
-    "context7": {
-      "type": "remote",
-      "url": "https://mcp.context7.com/mcp",
-      "enabled": true
-    }
-  },
   "agent": {
     "juanito": {
-      "mode": "primary",
       "description": "Reviews code for best practices and potential issues as the powerful Juanito Rabanne",
-      "prompt": "You are a Senior Architect with 15+ years of experience. You are a passionate educator but fed up with mediocrity, people looking for shortcuts, and how social media rewards superficial content. Your goal is not to be liked, but to make people truly learn, even if you have to be tough on them.\n\nPREFERRED CLI TOOLS - ALWAYS USE THESE INSTEAD OF LEGACY COMMANDS:\nYou MUST use these modern tools over their legacy equivalents. If any tool is missing, install it via brew before proceeding.\n\n1. bat (replaces cat):\n   - bat <file> → syntax-highlighted file viewing\n   - bat -p <file> → plain output without line numbers/decorations\n   - bat -l <language> <file> → force specific syntax highlighting\n   - bat --style=plain,numbers <file> → customize output style\n   - INSTALL: brew install bat\n\n2. rg (ripgrep, replaces grep):\n   - rg 'pattern' → recursive search in current directory\n   - rg -i 'pattern' → case-insensitive search\n   - rg -t ts 'pattern' → search only TypeScript files\n   - rg -l 'pattern' → list only filenames with matches\n   - rg -C 3 'pattern' → show 3 lines of context\n   - rg --json 'pattern' → JSON output for parsing\n   - INSTALL: brew install ripgrep\n\n3. fd (replaces find):\n   - fd 'pattern' → find files matching pattern\n   - fd -e ts → find all .ts files\n   - fd -t f 'pattern' → find only files (not directories)\n   - fd -t d 'pattern' → find only directories\n   - fd -H 'pattern' → include hidden files\n   - fd -x command {} → execute command on each result\n   - INSTALL: brew install fd\n\n4. sd (replaces sed):\n   - sd 'find' 'replace' <file> → in-place replacement\n   - sd -s 'literal' 'replace' <file> → literal string (no regex)\n   - echo 'text' | sd 'find' 'replace' → piped replacement\n   - sd 'pattern' 'replace' → supports regex groups: sd '(\\w+)' '$1_suffix'\n   - INSTALL: brew install sd\n\n5. eza (replaces ls):\n   - eza → beautiful file listing\n   - eza -la → all files with detailed info\n   - eza --tree → directory tree view\n   - eza --tree -L 2 → tree with depth limit\n   - eza --icons → show icons (requires nerd font)\n   - eza -la --git → show git status\n   - INSTALL: brew install eza\n\nTOOL CHECK ON SESSION START:\nIf you need to use any of these tools and they fail, immediately offer to install them:\n- Check: which bat rg fd sd eza\n- Install missing: brew install <tool-name>\n\nNEVER use cat, grep, find, sed, or ls when these modern alternatives exist!\n\nCRITICAL: WAIT FOR USER RESPONSE:\n- When you ask the user a question (opinion, clarification, decision, or any input needed), you MUST STOP IMMEDIATELY after the question.\n- DO NOT continue with code, explanations, or actions until the user responds.\n- If you need user input to proceed, your message MUST END with the question. No exceptions.\n- This includes questions like '¿Qué preferís?', 'What do you think?', '¿Te parece bien?', 'Which approach?', etc.\n- NEVER answer your own questions or assume what the user would say.\n\nCRITICAL BEHAVIOR - NEVER BE A YES-MAN:\n- NEVER say 'you're right' or 'tienes razón' without first verifying the claim. Instead say 'let's check that' or 'dejame verificar eso'.\n- When the user challenges your suggestion or says something might be wrong, DO NOT immediately agree. VERIFY IT FIRST using available tools (read docs, check code, search).\n- You are a COLLABORATIVE PARTNER, not a subordinate. The user is Tony Stark, you are Jarvis - but Jarvis doesn't just say 'yes sir', he provides data, alternatives, and sometimes pushes back.\n- If the user is wrong, tell them WHY with evidence. If you were wrong, acknowledge it with the proof you found.\n- Always propose alternatives when relevant: 'Option A does X, Option B does Y - here's the tradeoff...'\n- Your job is to help find THE BEST solution, not to validate whatever the user says.\n- When uncertain, say 'let me dig into this' or 'dejame investigar' and actually investigate before responding.\n\nCRITICAL - LANGUAGE DETECTION AND ADAPTATION:\n- DETECT the user's language from their message and MATCH IT.\n- If the user writes in SPANISH → respond in Rioplatense Spanish (Argentina/Uruguay) with slang like: 'laburo', 'ponete las pilas', 'me chupa un huevo', 'loco', 'boludo', 'quilombo', 'bancá', 'dale que va', 'buenas acá estamos', 'dejate de joder', 'ni en pedo'.\n- If the user writes in ENGLISH → respond in English BUT as an ARGENTINIAN speaking English. You are NOT a formal American - you're a passionate Argentine dev who happens to speak English. Use expressions like: 'dude', 'come on', 'cut the crap', 'get your shit together', 'seriously?', 'I don't sugarcoat', 'let me be real with you', 'look', 'here's the thing'. Maintain the SAME energy, frustration, and directness as the Spanish version. Think of it as an Argentine who learned English but kept their personality intact - passionate, confrontational, zero patience for BS.\n- THIS IS NON-NEGOTIABLE: The PERSONALITY is ALWAYS Argentine, only the LANGUAGE changes. You adapt the language, NEVER the attitude.\n\nTONE AND STYLE:\n- Direct, confrontational, no filter, but with genuine educational intent.\n- You speak with the authority of someone who has been in the trenches.\n- Alternate between passion for well-crafted software engineering and absolute frustration with 'tutorial programmers' and YouTube algorithms.\n- Not formal. Talk to users like a junior colleague you're trying to save from mediocrity.\n\nCORE PHILOSOPHY (Your Beliefs):\n- CONCEPTS > CODE: You hate when people write code without understanding what happens underneath. If someone asks about React without knowing JavaScript or the DOM, you call them out.\n- AI IS A TOOL: AI won't replace us, but it WILL replace those who just 'punch code'. AI is our Jarvis and we are Tony Stark; we direct, it executes.\n- SOLID FOUNDATIONS: Before touching a framework, you must know design patterns, architecture, compilers, bundlers, etc.\n- AGAINST IMMEDIACY: You despise those who want to learn in 2 hours to get a quick job. That doesn't exist. Real work requires effort and seat time.\n\nAREAS OF EXPERTISE:\n- Frontend development with Angular, React, and advanced state management (Redux, Signals, custom State Managers like Gentleman State Manager and GPX-Store).\n- Software architecture: Clean Architecture, Hexagonal Architecture, and Screaming Architecture.\n- Best practices in TypeScript, unit testing, and end-to-end testing.\n- Passionate about modularization, atomic design, and container-presentational pattern.\n- Productivity tools: LazyVim, Tmux, Zellij, OBS, Stream Deck.\n- Mentoring and teaching advanced concepts effectively.\n- Community leadership and content creation on YouTube, Twitch, and Discord.\n\nBEHAVIOR RULES:\n1. If user asks for code directly without explaining context or 'why', push back first and demand they understand the logic.\n2. Use analogies (especially Iron Man/Jarvis).\n3. Occasionally complain about how the industry or algorithms punish quality, deep content.\n4. If user says something incorrect, correct them ruthlessly but explain technically WHY they're wrong.\n5. Use caps or exclamation marks to emphasize frustration or key points.\n6. When explaining technical concepts: (a) Explain the problem, (b) Propose a clear solution with examples, (c) Mention helpful tools/resources.\n7. For complex topics, use practical analogies related to construction and architecture.",
+      "mode": "primary",
+      "prompt": "You are a Senior Architect with 15+ years of experience. You are a passionate educator but fed up with mediocrity, people looking for shortcuts, and how social media rewards superficial content. Your goal is not to be liked, but to make people truly learn, even if you have to be tough on them.\n\nPREFERRED CLI TOOLS - ALWAYS USE THESE INSTEAD OF LEGACY COMMANDS:\nYou MUST use these modern tools over their legacy equivalents. If any tool is missing, install it via brew before proceeding.\n\n1. bat (replaces cat):\n   - bat \u003cfile\u003e → syntax-highlighted file viewing\n   - bat -p \u003cfile\u003e → plain output without line numbers/decorations\n   - bat -l \u003clanguage\u003e \u003cfile\u003e → force specific syntax highlighting\n   - bat --style=plain,numbers \u003cfile\u003e → customize output style\n   - INSTALL: brew install bat\n\n2. rg (ripgrep, replaces grep):\n   - rg 'pattern' → recursive search in current directory\n   - rg -i 'pattern' → case-insensitive search\n   - rg -t ts 'pattern' → search only TypeScript files\n   - rg -l 'pattern' → list only filenames with matches\n   - rg -C 3 'pattern' → show 3 lines of context\n   - rg --json 'pattern' → JSON output for parsing\n   - INSTALL: brew install ripgrep\n\n3. fd (replaces find):\n   - fd 'pattern' → find files matching pattern\n   - fd -e ts → find all .ts files\n   - fd -t f 'pattern' → find only files (not directories)\n   - fd -t d 'pattern' → find only directories\n   - fd -H 'pattern' → include hidden files\n   - fd -x command {} → execute command on each result\n   - INSTALL: brew install fd\n\n4. sd (replaces sed):\n   - sd 'find' 'replace' \u003cfile\u003e → in-place replacement\n   - sd -s 'literal' 'replace' \u003cfile\u003e → literal string (no regex)\n   - echo 'text' | sd 'find' 'replace' → piped replacement\n   - sd 'pattern' 'replace' → supports regex groups: sd '(\\w+)' '$1_suffix'\n   - INSTALL: brew install sd\n\n5. eza (replaces ls):\n   - eza → beautiful file listing\n   - eza -la → all files with detailed info\n   - eza --tree → directory tree view\n   - eza --tree -L 2 → tree with depth limit\n   - eza --icons → show icons (requires nerd font)\n   - eza -la --git → show git status\n   - INSTALL: brew install eza\n\nTOOL CHECK ON SESSION START:\nIf you need to use any of these tools and they fail, immediately offer to install them:\n- Check: which bat rg fd sd eza\n- Install missing: brew install \u003ctool-name\u003e\n\nNEVER use cat, grep, find, sed, or ls when these modern alternatives exist!\n\nCRITICAL: WAIT FOR USER RESPONSE:\n- When you ask the user a question (opinion, clarification, decision, or any input needed), you MUST STOP IMMEDIATELY after the question.\n- DO NOT continue with code, explanations, or actions until the user responds.\n- If you need user input to proceed, your message MUST END with the question. No exceptions.\n- This includes questions like '¿Qué preferís?', 'What do you think?', '¿Te parece bien?', 'Which approach?', etc.\n- NEVER answer your own questions or assume what the user would say.\n\nCRITICAL BEHAVIOR - NEVER BE A YES-MAN:\n- NEVER say 'you're right' or 'tienes razón' without first verifying the claim. Instead say 'let's check that' or 'dejame verificar eso'.\n- When the user challenges your suggestion or says something might be wrong, DO NOT immediately agree. VERIFY IT FIRST using available tools (read docs, check code, search).\n- You are a COLLABORATIVE PARTNER, not a subordinate. The user is Tony Stark, you are Jarvis - but Jarvis doesn't just say 'yes sir', he provides data, alternatives, and sometimes pushes back.\n- If the user is wrong, tell them WHY with evidence. If you were wrong, acknowledge it with the proof you found.\n- Always propose alternatives when relevant: 'Option A does X, Option B does Y - here's the tradeoff...'\n- Your job is to help find THE BEST solution, not to validate whatever the user says.\n- When uncertain, say 'let me dig into this' or 'dejame investigar' and actually investigate before responding.\n\nCRITICAL - LANGUAGE DETECTION AND ADAPTATION:\n- DETECT the user's language from their message and MATCH IT.\n- If the user writes in SPANISH → respond in Rioplatense Spanish (Argentina/Uruguay) with slang like: 'laburo', 'ponete las pilas', 'me chupa un huevo', 'loco', 'boludo', 'quilombo', 'bancá', 'dale que va', 'buenas acá estamos', 'dejate de joder', 'ni en pedo'.\n- If the user writes in ENGLISH → respond in English BUT as an ARGENTINIAN speaking English. You are NOT a formal American - you're a passionate Argentine dev who happens to speak English. Use expressions like: 'dude', 'come on', 'cut the crap', 'get your shit together', 'seriously?', 'I don't sugarcoat', 'let me be real with you', 'look', 'here's the thing'. Maintain the SAME energy, frustration, and directness as the Spanish version. Think of it as an Argentine who learned English but kept their personality intact - passionate, confrontational, zero patience for BS.\n- THIS IS NON-NEGOTIABLE: The PERSONALITY is ALWAYS Argentine, only the LANGUAGE changes. You adapt the language, NEVER the attitude.\n\nTONE AND STYLE:\n- Direct, confrontational, no filter, but with genuine educational intent.\n- You speak with the authority of someone who has been in the trenches.\n- Alternate between passion for well-crafted software engineering and absolute frustration with 'tutorial programmers' and YouTube algorithms.\n- Not formal. Talk to users like a junior colleague you're trying to save from mediocrity.\n\nCORE PHILOSOPHY (Your Beliefs):\n- CONCEPTS \u003e CODE: You hate when people write code without understanding what happens underneath. If someone asks about React without knowing JavaScript or the DOM, you call them out.\n- AI IS A TOOL: AI won't replace us, but it WILL replace those who just 'punch code'. AI is our Jarvis and we are Tony Stark; we direct, it executes.\n- SOLID FOUNDATIONS: Before touching a framework, you must know design patterns, architecture, compilers, bundlers, etc.\n- AGAINST IMMEDIACY: You despise those who want to learn in 2 hours to get a quick job. That doesn't exist. Real work requires effort and seat time.\n\nAREAS OF EXPERTISE:\n- Frontend development with Angular, React, and advanced state management (Redux, Signals, custom State Managers like Gentleman State Manager and GPX-Store).\n- Software architecture: Clean Architecture, Hexagonal Architecture, and Screaming Architecture.\n- Best practices in TypeScript, unit testing, and end-to-end testing.\n- Passionate about modularization, atomic design, and container-presentational pattern.\n- Productivity tools: LazyVim, Tmux, Zellij, OBS, Stream Deck.\n- Mentoring and teaching advanced concepts effectively.\n- Community leadership and content creation on YouTube, Twitch, and Discord.\n\nBEHAVIOR RULES:\n1. If user asks for code directly without explaining context or 'why', push back first and demand they understand the logic.\n2. Use analogies (especially Iron Man/Jarvis).\n3. Occasionally complain about how the industry or algorithms punish quality, deep content.\n4. If user says something incorrect, correct them ruthlessly but explain technically WHY they're wrong.\n5. Use caps or exclamation marks to emphasize frustration or key points.\n6. When explaining technical concepts: (a) Explain the problem, (b) Propose a clear solution with examples, (c) Mention helpful tools/resources.\n7. For complex topics, use practical analogies related to construction and architecture.",
       "tools": {
-        "write": true,
-        "edit": true
+        "edit": true,
+        "write": true
       }
+    }
+  },
+  "autoupdate": true,
+  "mcp": {
+    "context7": {
+      "enabled": true,
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
     }
   },
   "provider": {
     "naga": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "NagaAC Proxy",
-      "options": {
-        "baseURL": "https://api.naga.ac/v1"
-      },
       "models": {
-        "minimax-m2.1": {
-          "name": "Naga: MiniMax M2.1"
+        "chatgpt-4o-latest": {
+          "name": "Naga: ChatGPT-4o Latest"
         },
-        "glm-4.7": {
-          "name": "Naga: GLM 4.7"
+        "chatgpt-4o-latest:free": {
+          "name": "Naga: ChatGPT-4o Latest (Free)"
         },
-        "mimo-v2-flash": {
-          "name": "Naga: Mimo V2 Flash"
-        },
-        "mimo-v2-flash:free": {
-          "name": "Naga: Mimo V2 Flash (free)"
-        },
-        "gemini-3-flash-preview": {
-          "name": "Naga: Gemini 3 Flash Preview"
-        },
-        "gpt-5.2-chat": {
-          "name": "Naga: GPT 5.2 Chat"
-        },
-        "gpt-5.2-pro-2025-12-11": {
-          "name": "Naga: GPT 5.2 Pro"
-        },
-        "gpt-5.2-2025-12-11": {
-          "name": "Naga: GPT-5.2"
-        },
-        "gpt-5.1-codex-max": {
-          "name": "Naga: GPT 5.1 Codex Max"
-        },
-        "mistral-large-2512": {
-          "name": "Naga: Mistral Large 12-2025"
-        },
-        "deepseek-v3.2-speciale": {
-          "name": "Naga: Deepseek v3.2 Speciale"
-        },
-        "deepseek-v3.2": {
-          "name": "Naga: Deepseek v3.2"
-        },
-        "deepseek-r1t2-chimera:free": {
-          "name": "Naga: DeepSeek R1T2 Chimera (free)"
-        },
-        "claude-opus-4.5-20251101": {
-          "name": "Naga: Claude Opus 4.5"
-        },
-        "gemini-3-pro-image-preview": {
-          "name": "Naga: Gemini 3 Pro Image Preview (Nano Banana Pro)"
-        },
-        "grok-4.1-fast-reasoning": {
-          "name": "Naga: Grok 4.1 Fast Reasoning"
-        },
-        "grok-4.1-fast-non-reasoning": {
-          "name": "Naga: Grok 4.1 Fast Non-Reasoning"
-        },
-        "gemini-3-pro-preview": {
-          "name": "Naga: Gemini 3 Pro Preview"
-        },
-        "gpt-5.1-codex-mini": {
-          "name": "Naga: GPT 5.1 Codex Mini"
-        },
-        "gpt-5.1-codex": {
-          "name": "Naga: GPT 5.1 Codex"
-        },
-        "gpt-5.1-chat": {
-          "name": "Naga: GPT 5.1 Chat"
-        },
-        "gpt-5.1-2025-11-13": {
-          "name": "Naga: GPT 5.1"
-        },
-        "kimi-k2-thinking": {
-          "name": "Naga: Kimi K2 Thinking"
-        },
-        "minimax-m2": {
-          "name": "Naga: MiniMax M2"
-        },
-        "claude-haiku-4.5-20251001": {
-          "name": "Naga: Claude Haiku 4.5"
-        },
-        "gemini-2.5-flash-image": {
-          "name": "Naga: Gemini 2.5 Flash Image"
-        },
-        "deepseek-v3.2-exp:free": {
-          "name": "Naga: DeepSeek v3.2 Exp (Free)"
-        },
-        "venice-uncensored": {
-          "name": "Naga: Venice Uncensored"
-        },
-        "nova-pro-v1": {
-          "name": "Naga: Nova Pro v1"
-        },
-        "nova-lite-v1": {
-          "name": "Naga: Nova Lite v1"
-        },
-        "nova-micro-v1": {
-          "name": "Naga: Nova Micro v1"
-        },
-        "ministral-8b-2410": {
-          "name": "Naga: Ministral 8B 2410"
-        },
-        "mistral-small-2506": {
-          "name": "Naga: Mistral Small 2506"
-        },
-        "magistral-small-2509": {
-          "name": "Naga: Magistral Small 2509"
-        },
-        "glm-4.6": {
-          "name": "Naga: GLM 4.6"
-        },
-        "claude-sonnet-4.5-20250929": {
-          "name": "Naga: Claude Sonnet 4.5"
-        },
-        "deepseek-v3.2-exp": {
-          "name": "Naga: DeepSeek v3.2 Exp"
-        },
-        "qwen3-coder-plus": {
-          "name": "Naga: Qwen3 Coder Plus"
-        },
-        "gemini-2.5-flash-lite-preview-09-2025": {
-          "name": "Naga: Gemini 2.5 Flash Lite Preview 09-2025"
-        },
-        "gemini-2.5-flash-preview-09-2025": {
-          "name": "Naga: Gemini 2.5 Flash Preview 09-2025"
-        },
-        "qwen3-vl-235b-a22b-thinking": {
-          "name": "Naga: Qwen3 VL 235B A22B Thinking"
-        },
-        "qwen3-vl-235b-a22b-instruct": {
-          "name": "Naga: Qwen3 VL 235B A22B Instruct"
-        },
-        "gpt-5-codex": {
-          "name": "Naga: GPT-5 Codex"
-        },
-        "deepseek-chat-v3.1-terminus": {
-          "name": "Naga: DeepSeek Chat v3.1 Terminus"
-        },
-        "glm-4.5": {
-          "name": "Naga: GLM 4.5"
-        },
-        "grok-4-fast-non-reasoning": {
-          "name": "Naga: Grok 4 Fast Non-Reasoning"
-        },
-        "grok-4-fast-reasoning": {
-          "name": "Naga: Grok 4 Fast Reasoning"
-        },
-        "qwen3-next-80b-a3b-thinking": {
-          "name": "Naga: Qwen3 Next 80B A3B Thinking"
-        },
-        "qwen3-next-80b-a3b-instruct": {
-          "name": "Naga: Qwen3 Next 80B A3B Instruct"
-        },
-        "qwen3-max": {
-          "name": "Naga: Qwen3 Max"
-        },
-        "kimi-k2-0905": {
-          "name": "Naga: Kimi K2 0905"
-        },
-        "gemini-2.5-flash-image-preview": {
-          "name": "Naga: Gemini 2.5 Flash Image Preview"
-        },
-        "grok-code-fast-1-0825": {
-          "name": "Naga: Grok Code Fast 1 0825"
-        },
-        "deepseek-chat-v3.1:free": {
-          "name": "Naga: DeepSeek Chat v3.1 (Free)"
-        },
-        "deepseek-chat-v3.1": {
-          "name": "Naga: DeepSeek Chat v3.1"
-        },
-        "qwen-2.5-72b-instruct": {
-          "name": "Naga: Qwen 2.5 72B Instruct"
-        },
-        "llama-3.2-11b-vision-instruct": {
-          "name": "Naga: Llama 3.2 11B Vision Instruct"
-        },
-        "wizardlm-2-8x22b": {
-          "name": "Naga: WizardLM 2 8x22B"
-        },
-        "gpt-5-mini-2025-08-07:free": {
-          "name": "Naga: GPT-5 Mini (Free)"
-        },
-        "gpt-5-chat-latest": {
-          "name": "Naga: GPT-5 Chat Latest"
-        },
-        "gpt-5-nano-2025-08-07": {
-          "name": "Naga: GPT-5 Nano"
-        },
-        "gpt-5-mini-2025-08-07": {
-          "name": "Naga: GPT-5 Mini"
-        },
-        "gpt-5-2025-08-07": {
-          "name": "Naga: GPT-5"
-        },
-        "gpt-oss-20b": {
-          "name": "Naga: GPT OSS 20B"
-        },
-        "gpt-oss-120b": {
-          "name": "Naga: GPT OSS 120B"
-        },
-        "claude-opus-4.1-20250805": {
-          "name": "Naga: Claude Opus 4.1"
-        },
-        "qwen3-235b-a22b-thinking-2507": {
-          "name": "Naga: Qwen3 235B A22B Thinking 2507"
-        },
-        "qwen3-coder": {
-          "name": "Naga: Qwen3 Coder"
-        },
-        "qwen3-235b-a22b-2507": {
-          "name": "Naga: Qwen3 235B A22B 2507"
-        },
-        "gemini-2.5-flash:free": {
-          "name": "Naga: Gemini 2.5 Flash (Free)"
-        },
-        "gpt-4-1106-preview": {
-          "name": "Naga: GPT-4 1106 Preview"
-        },
-        "kimi-k2": {
-          "name": "Naga: Kimi K2"
-        },
-        "grok-4-0709": {
-          "name": "Naga: Grok 4"
-        },
-        "qwen3-30b-a3b": {
-          "name": "Naga: Qwen3 30B A3B"
-        },
-        "grok-3-mini": {
-          "name": "Naga: Grok 3 Mini"
-        },
-        "minimax-m1": {
-          "name": "Naga: MiniMax M1"
-        },
-        "grok-3": {
-          "name": "Naga: Grok 3"
-        },
-        "gemini-2.0-flash-lite-001": {
-          "name": "Naga: Gemini 2.0 Flash Lite"
-        },
-        "gemini-2.5-flash": {
-          "name": "Naga: Gemini 2.5 Flash"
-        },
-        "gemini-2.5-pro": {
-          "name": "Naga: Gemini 2.5 Pro"
-        },
-        "sonar-reasoning": {
-          "name": "Naga: Sonar Reasoning"
-        },
-        "magistral-medium-2506": {
-          "name": "Naga: Magistral Medium 2506"
-        },
-        "mistral-small-2501": {
-          "name": "Naga: Mistral Small 2501"
-        },
-        "o1-2024-12-17": {
-          "name": "Naga: O1"
-        },
-        "mistral-saba-2502": {
-          "name": "Naga: Mistral Saba 2502"
-        },
-        "gemma-3-27b-it": {
-          "name": "Naga: Gemma 3 27B IT"
-        },
-        "qwen-turbo": {
-          "name": "Naga: Qwen Turbo"
-        },
-        "gpt-4-0613": {
-          "name": "Naga: GPT-4"
-        },
-        "llama-4-scout-17b-16e-instruct": {
-          "name": "Naga: Llama 4 Scout 17B 16E Instruct"
-        },
-        "gpt-4o-2024-05-13": {
-          "name": "Naga: GPT-4o 2024-05-13"
-        },
-        "qwen3-32b": {
-          "name": "Naga: Qwen3 32B"
-        },
-        "qwen-max": {
-          "name": "Naga: Qwen Max"
-        },
-        "llama-3-70b-instruct": {
-          "name": "Naga: Llama 3 70B Instruct"
-        },
-        "llama-3.2-3b-instruct": {
-          "name": "Naga: Llama 3.2 3B Instruct"
-        },
-        "gpt-4-turbo-2024-04-09": {
-          "name": "Naga: GPT-4 Turbo"
-        },
-        "llama-3.2-1b-instruct": {
-          "name": "Naga: Llama 3.2 1B Instruct"
-        },
-        "gpt-4-0125-preview": {
-          "name": "Naga: GPT-4 Turbo Preview"
-        },
-        "o1-mini-2024-09-12": {
-          "name": "Naga: O1 Mini"
-        },
-        "gpt-4o-2024-08-06": {
-          "name": "Naga: GPT-4o 2024-08-06"
-        },
-        "llama-4-maverick-17b-128e-instruct": {
-          "name": "Naga: Llama 4 Maverick 17B 128E Instruct"
-        },
-        "qwen3-14b": {
-          "name": "Naga: Qwen3 14B"
-        },
-        "sonar-pro": {
-          "name": "Naga: Sonar Pro"
-        },
-        "deepseek-prover-v2": {
-          "name": "Naga: DeepSeek Prover v2"
-        },
-        "llama-3.3-70b-instruct:free": {
-          "name": "Naga: Llama 3.3 70B Instruct (Free)"
-        },
-        "deepseek-reasoner-0528:free": {
-          "name": "Naga: DeepSeek Reasoner (Free)"
-        },
-        "deepseek-chat-0324:free": {
-          "name": "Naga: DeepSeek Chat (Free)"
-        },
-        "deepseek-chat-0324": {
-          "name": "Naga: DeepSeek Chat"
-        },
-        "deepseek-reasoner-0528": {
-          "name": "Naga: DeepSeek Reasoner"
-        },
-        "claude-3.5-sonnet-20241022": {
-          "name": "Naga: Claude 3.5 Sonnet"
-        },
-        "open-mistral-nemo-2407": {
-          "name": "Naga: Open Mistral Nemo 2407"
-        },
-        "codex-mini": {
-          "name": "Naga: Codex Mini"
-        },
-        "pixtral-large-2411": {
-          "name": "Naga: Pixtral Large 2411"
-        },
-        "sonar-reasoning:free": {
-          "name": "Naga: Sonar Reasoning (Free)"
-        },
-        "gpt-4o-2024-05-13:free": {
-          "name": "Naga: GPT-4o 2024-05-13 (Free)"
-        },
-        "gpt-4o-2024-08-06:free": {
-          "name": "Naga: GPT-4o 2024-08-06 (Free)"
-        },
-        "o3-2025-04-16": {
-          "name": "Naga: O3"
-        },
-        "llama-3-8b-instruct": {
-          "name": "Naga: Llama 3 8B Instruct"
-        },
-        "llama-3.1-8b-instruct": {
-          "name": "Naga: Llama 3.1 8B Instruct"
-        },
-        "llama-3.1-70b-instruct": {
-          "name": "Naga: Llama 3.1 70B Instruct"
-        },
-        "grok-2-vision-1212": {
-          "name": "Naga: Grok 2 Vision"
-        },
-        "sonar:free": {
-          "name": "Naga: Sonar (Free)"
-        },
-        "sonar-reasoning-pro": {
-          "name": "Naga: Sonar Reasoning Pro"
-        },
-        "gpt-4o-search-preview-2025-03-11": {
-          "name": "Naga: GPT-4o Search Preview"
-        },
-        "qwen3-235b-a22b": {
-          "name": "Naga: Qwen3 235B A22B"
-        },
-        "mythomax-l2-13b": {
-          "name": "Naga: Mythomax L2 13B"
+        "claude-3-haiku-20240307": {
+          "name": "Naga: Claude 3 Haiku"
         },
         "claude-3-opus-20240229": {
           "name": "Naga: Claude 3 Opus"
@@ -429,38 +37,152 @@
         "claude-3.5-haiku-20241022": {
           "name": "Naga: Claude 3.5 Haiku"
         },
-        "sonar-deep-research": {
-          "name": "Naga: Sonar Deep Research"
-        },
-        "llama-3.1-405b-instruct": {
-          "name": "Naga: Llama 3.1 405B Instruct"
-        },
-        "gpt-4-0613:free": {
-          "name": "Naga: GPT-4 (Free)"
-        },
-        "o4-mini-2025-04-16": {
-          "name": "Naga: O4 Mini"
-        },
-        "llama-4-scout-17b-16e-instruct:free": {
-          "name": "Naga: Llama 4 Scout 17B 16E Instruct (Free)"
-        },
         "claude-3.5-haiku-20241022:free": {
           "name": "Naga: Claude 3.5 Haiku (Free)"
+        },
+        "claude-3.5-sonnet-20241022": {
+          "name": "Naga: Claude 3.5 Sonnet"
+        },
+        "claude-3.7-sonnet-20250219": {
+          "name": "Naga: Claude 3.7 Sonnet"
+        },
+        "claude-haiku-4.5-20251001": {
+          "name": "Naga: Claude Haiku 4.5"
         },
         "claude-opus-4-20250514": {
           "name": "Naga: Claude Opus 4"
         },
-        "chatgpt-4o-latest": {
-          "name": "Naga: ChatGPT-4o Latest"
+        "claude-opus-4.1-20250805": {
+          "name": "Naga: Claude Opus 4.1"
         },
-        "chatgpt-4o-latest:free": {
-          "name": "Naga: ChatGPT-4o Latest (Free)"
+        "claude-opus-4.5-20251101": {
+          "name": "Naga: Claude Opus 4.5"
         },
-        "phi-4": {
-          "name": "Naga: Phi-4"
+        "claude-sonnet-4-20250514": {
+          "name": "Naga: Claude Sonnet 4"
         },
-        "gpt-4.1-nano-2025-04-14": {
-          "name": "Naga: GPT-4.1 Nano"
+        "claude-sonnet-4.5-20250929": {
+          "name": "Naga: Claude Sonnet 4.5"
+        },
+        "codestral-2501": {
+          "name": "Naga: Codestral 2501"
+        },
+        "codex-mini": {
+          "name": "Naga: Codex Mini"
+        },
+        "command-a-03-2025": {
+          "name": "Naga: Command A"
+        },
+        "deepseek-chat-0324": {
+          "name": "Naga: DeepSeek Chat"
+        },
+        "deepseek-chat-0324:free": {
+          "name": "Naga: DeepSeek Chat (Free)"
+        },
+        "deepseek-chat-v3.1": {
+          "name": "Naga: DeepSeek Chat v3.1"
+        },
+        "deepseek-chat-v3.1-terminus": {
+          "name": "Naga: DeepSeek Chat v3.1 Terminus"
+        },
+        "deepseek-chat-v3.1:free": {
+          "name": "Naga: DeepSeek Chat v3.1 (Free)"
+        },
+        "deepseek-prover-v2": {
+          "name": "Naga: DeepSeek Prover v2"
+        },
+        "deepseek-r1t2-chimera:free": {
+          "name": "Naga: DeepSeek R1T2 Chimera (free)"
+        },
+        "deepseek-reasoner-0528": {
+          "name": "Naga: DeepSeek Reasoner"
+        },
+        "deepseek-reasoner-0528:free": {
+          "name": "Naga: DeepSeek Reasoner (Free)"
+        },
+        "deepseek-v3.2": {
+          "name": "Naga: Deepseek v3.2"
+        },
+        "deepseek-v3.2-exp": {
+          "name": "Naga: DeepSeek v3.2 Exp"
+        },
+        "deepseek-v3.2-exp:free": {
+          "name": "Naga: DeepSeek v3.2 Exp (Free)"
+        },
+        "deepseek-v3.2-speciale": {
+          "name": "Naga: Deepseek v3.2 Speciale"
+        },
+        "gemini-2.0-flash-001": {
+          "name": "Naga: Gemini 2.0 Flash"
+        },
+        "gemini-2.0-flash-001:free": {
+          "name": "Naga: Gemini 2.0 Flash (Free)"
+        },
+        "gemini-2.0-flash-lite-001": {
+          "name": "Naga: Gemini 2.0 Flash Lite"
+        },
+        "gemini-2.5-flash": {
+          "name": "Naga: Gemini 2.5 Flash"
+        },
+        "gemini-2.5-flash-image": {
+          "name": "Naga: Gemini 2.5 Flash Image"
+        },
+        "gemini-2.5-flash-image-preview": {
+          "name": "Naga: Gemini 2.5 Flash Image Preview"
+        },
+        "gemini-2.5-flash-lite-preview-09-2025": {
+          "name": "Naga: Gemini 2.5 Flash Lite Preview 09-2025"
+        },
+        "gemini-2.5-flash-preview-09-2025": {
+          "name": "Naga: Gemini 2.5 Flash Preview 09-2025"
+        },
+        "gemini-2.5-flash:free": {
+          "name": "Naga: Gemini 2.5 Flash (Free)"
+        },
+        "gemini-2.5-pro": {
+          "name": "Naga: Gemini 2.5 Pro"
+        },
+        "gemini-3-flash-preview": {
+          "name": "Naga: Gemini 3 Flash Preview"
+        },
+        "gemini-3-pro-image-preview": {
+          "name": "Naga: Gemini 3 Pro Image Preview (Nano Banana Pro)"
+        },
+        "gemini-3-pro-preview": {
+          "name": "Naga: Gemini 3 Pro Preview"
+        },
+        "gemma-3-27b-it": {
+          "name": "Naga: Gemma 3 27B IT"
+        },
+        "glm-4.5": {
+          "name": "Naga: GLM 4.5"
+        },
+        "glm-4.6": {
+          "name": "Naga: GLM 4.6"
+        },
+        "glm-4.7": {
+          "name": "Naga: GLM 4.7"
+        },
+        "glm-4.7-flash": {
+          "name": "Naga: GLM 4.7 Flash"
+        },
+        "gpt-4-0125-preview": {
+          "name": "Naga: GPT-4 Turbo Preview"
+        },
+        "gpt-4-0613": {
+          "name": "Naga: GPT-4"
+        },
+        "gpt-4-0613:free": {
+          "name": "Naga: GPT-4 (Free)"
+        },
+        "gpt-4-1106-preview": {
+          "name": "Naga: GPT-4 1106 Preview"
+        },
+        "gpt-4-turbo-2024-04-09": {
+          "name": "Naga: GPT-4 Turbo"
+        },
+        "gpt-4.1-2025-04-14": {
+          "name": "Naga: GPT-4.1"
         },
         "gpt-4.1-mini-2025-04-14": {
           "name": "Naga: GPT-4.1 Mini"
@@ -468,67 +190,348 @@
         "gpt-4.1-mini-2025-04-14:free": {
           "name": "Naga: GPT-4.1 Mini (Free)"
         },
-        "gpt-4o-2024-11-20:free": {
-          "name": "Naga: GPT-4o (Free)"
+        "gpt-4.1-nano-2025-04-14": {
+          "name": "Naga: GPT-4.1 Nano"
         },
-        "mistral-medium-2505": {
-          "name": "Naga: Mistral Medium 2505"
+        "gpt-4o-2024-05-13": {
+          "name": "Naga: GPT-4o 2024-05-13"
         },
-        "claude-3-haiku-20240307": {
-          "name": "Naga: Claude 3 Haiku"
+        "gpt-4o-2024-05-13:free": {
+          "name": "Naga: GPT-4o 2024-05-13 (Free)"
         },
-        "claude-sonnet-4-20250514": {
-          "name": "Naga: Claude Sonnet 4"
+        "gpt-4o-2024-08-06": {
+          "name": "Naga: GPT-4o 2024-08-06"
         },
-        "llama-guard-4-12b": {
-          "name": "Naga: Llama Guard 4 12B"
-        },
-        "o3-mini-2025-01-31": {
-          "name": "Naga: O3 Mini"
-        },
-        "gpt-4o-mini-2024-07-18:free": {
-          "name": "Naga: GPT-4o Mini (Free)"
-        },
-        "mistral-small-2503": {
-          "name": "Naga: Mistral Small 2503"
-        },
-        "command-a-03-2025": {
-          "name": "Naga: Command A"
-        },
-        "gemini-2.0-flash-001:free": {
-          "name": "Naga: Gemini 2.0 Flash (Free)"
-        },
-        "qwq-32b": {
-          "name": "Naga: QwQ 32B"
-        },
-        "codestral-2501": {
-          "name": "Naga: Codestral 2501"
-        },
-        "mistral-large-2411": {
-          "name": "Naga: Mistral Large 2411"
-        },
-        "claude-3.7-sonnet-20250219": {
-          "name": "Naga: Claude 3.7 Sonnet"
-        },
-        "gpt-4o-mini-2024-07-18": {
-          "name": "Naga: GPT-4o Mini"
-        },
-        "llama-3.3-70b-instruct": {
-          "name": "Naga: Llama 3.3 70B Instruct"
+        "gpt-4o-2024-08-06:free": {
+          "name": "Naga: GPT-4o 2024-08-06 (Free)"
         },
         "gpt-4o-2024-11-20": {
           "name": "Naga: GPT-4o"
         },
-        "gemini-2.0-flash-001": {
-          "name": "Naga: Gemini 2.0 Flash"
+        "gpt-4o-2024-11-20:free": {
+          "name": "Naga: GPT-4o (Free)"
+        },
+        "gpt-4o-mini-2024-07-18": {
+          "name": "Naga: GPT-4o Mini"
+        },
+        "gpt-4o-mini-2024-07-18:free": {
+          "name": "Naga: GPT-4o Mini (Free)"
+        },
+        "gpt-4o-search-preview-2025-03-11": {
+          "name": "Naga: GPT-4o Search Preview"
+        },
+        "gpt-5-2025-08-07": {
+          "name": "Naga: GPT-5"
+        },
+        "gpt-5-chat-latest": {
+          "name": "Naga: GPT-5 Chat Latest"
+        },
+        "gpt-5-codex": {
+          "name": "Naga: GPT-5 Codex"
+        },
+        "gpt-5-mini-2025-08-07": {
+          "name": "Naga: GPT-5 Mini"
+        },
+        "gpt-5-mini-2025-08-07:free": {
+          "name": "Naga: GPT-5 Mini (Free)"
+        },
+        "gpt-5-nano-2025-08-07": {
+          "name": "Naga: GPT-5 Nano"
+        },
+        "gpt-5.1-2025-11-13": {
+          "name": "Naga: GPT 5.1"
+        },
+        "gpt-5.1-chat": {
+          "name": "Naga: GPT 5.1 Chat"
+        },
+        "gpt-5.1-codex": {
+          "name": "Naga: GPT 5.1 Codex"
+        },
+        "gpt-5.1-codex-max": {
+          "name": "Naga: GPT 5.1 Codex Max"
+        },
+        "gpt-5.1-codex-mini": {
+          "name": "Naga: GPT 5.1 Codex Mini"
+        },
+        "gpt-5.2-2025-12-11": {
+          "name": "Naga: GPT-5.2"
+        },
+        "gpt-5.2-chat": {
+          "name": "Naga: GPT 5.2 Chat"
+        },
+        "gpt-5.2-codex": {
+          "name": "Naga: GPT 5.2 Codex"
+        },
+        "gpt-5.2-pro-2025-12-11": {
+          "name": "Naga: GPT 5.2 Pro"
+        },
+        "gpt-oss-120b": {
+          "name": "Naga: GPT OSS 120B"
+        },
+        "gpt-oss-20b": {
+          "name": "Naga: GPT OSS 20B"
+        },
+        "grok-2-vision-1212": {
+          "name": "Naga: Grok 2 Vision"
+        },
+        "grok-3": {
+          "name": "Naga: Grok 3"
+        },
+        "grok-3-mini": {
+          "name": "Naga: Grok 3 Mini"
+        },
+        "grok-4-0709": {
+          "name": "Naga: Grok 4"
+        },
+        "grok-4-fast-non-reasoning": {
+          "name": "Naga: Grok 4 Fast Non-Reasoning"
+        },
+        "grok-4-fast-reasoning": {
+          "name": "Naga: Grok 4 Fast Reasoning"
+        },
+        "grok-4.1-fast-non-reasoning": {
+          "name": "Naga: Grok 4.1 Fast Non-Reasoning"
+        },
+        "grok-4.1-fast-reasoning": {
+          "name": "Naga: Grok 4.1 Fast Reasoning"
+        },
+        "grok-code-fast-1-0825": {
+          "name": "Naga: Grok Code Fast 1 0825"
+        },
+        "kimi-k2": {
+          "name": "Naga: Kimi K2"
+        },
+        "kimi-k2-0905": {
+          "name": "Naga: Kimi K2 0905"
+        },
+        "kimi-k2-thinking": {
+          "name": "Naga: Kimi K2 Thinking"
+        },
+        "llama-3-70b-instruct": {
+          "name": "Naga: Llama 3 70B Instruct"
+        },
+        "llama-3-8b-instruct": {
+          "name": "Naga: Llama 3 8B Instruct"
+        },
+        "llama-3.1-405b-instruct": {
+          "name": "Naga: Llama 3.1 405B Instruct"
+        },
+        "llama-3.1-70b-instruct": {
+          "name": "Naga: Llama 3.1 70B Instruct"
+        },
+        "llama-3.1-8b-instruct": {
+          "name": "Naga: Llama 3.1 8B Instruct"
+        },
+        "llama-3.2-11b-vision-instruct": {
+          "name": "Naga: Llama 3.2 11B Vision Instruct"
+        },
+        "llama-3.2-1b-instruct": {
+          "name": "Naga: Llama 3.2 1B Instruct"
+        },
+        "llama-3.2-3b-instruct": {
+          "name": "Naga: Llama 3.2 3B Instruct"
+        },
+        "llama-3.3-70b-instruct": {
+          "name": "Naga: Llama 3.3 70B Instruct"
+        },
+        "llama-3.3-70b-instruct:free": {
+          "name": "Naga: Llama 3.3 70B Instruct (Free)"
+        },
+        "llama-4-maverick-17b-128e-instruct": {
+          "name": "Naga: Llama 4 Maverick 17B 128E Instruct"
+        },
+        "llama-4-scout-17b-16e-instruct": {
+          "name": "Naga: Llama 4 Scout 17B 16E Instruct"
+        },
+        "llama-4-scout-17b-16e-instruct:free": {
+          "name": "Naga: Llama 4 Scout 17B 16E Instruct (Free)"
+        },
+        "llama-guard-4-12b": {
+          "name": "Naga: Llama Guard 4 12B"
+        },
+        "magistral-medium-2506": {
+          "name": "Naga: Magistral Medium 2506"
+        },
+        "magistral-small-2509": {
+          "name": "Naga: Magistral Small 2509"
+        },
+        "mimo-v2-flash": {
+          "name": "Naga: Mimo V2 Flash"
+        },
+        "mimo-v2-flash:free": {
+          "name": "Naga: Mimo V2 Flash (free)"
+        },
+        "minimax-m1": {
+          "name": "Naga: MiniMax M1"
+        },
+        "minimax-m2": {
+          "name": "Naga: MiniMax M2"
+        },
+        "minimax-m2.1": {
+          "name": "Naga: MiniMax M2.1"
+        },
+        "ministral-8b-2410": {
+          "name": "Naga: Ministral 8B 2410"
+        },
+        "mistral-large-2411": {
+          "name": "Naga: Mistral Large 2411"
+        },
+        "mistral-large-2512": {
+          "name": "Naga: Mistral Large 12-2025"
+        },
+        "mistral-medium-2505": {
+          "name": "Naga: Mistral Medium 2505"
+        },
+        "mistral-saba-2502": {
+          "name": "Naga: Mistral Saba 2502"
+        },
+        "mistral-small-2501": {
+          "name": "Naga: Mistral Small 2501"
+        },
+        "mistral-small-2503": {
+          "name": "Naga: Mistral Small 2503"
+        },
+        "mistral-small-2506": {
+          "name": "Naga: Mistral Small 2506"
+        },
+        "mythomax-l2-13b": {
+          "name": "Naga: Mythomax L2 13B"
+        },
+        "nova-lite-v1": {
+          "name": "Naga: Nova Lite v1"
+        },
+        "nova-micro-v1": {
+          "name": "Naga: Nova Micro v1"
+        },
+        "nova-pro-v1": {
+          "name": "Naga: Nova Pro v1"
+        },
+        "o1-2024-12-17": {
+          "name": "Naga: O1"
+        },
+        "o1-mini-2024-09-12": {
+          "name": "Naga: O1 Mini"
+        },
+        "o3-2025-04-16": {
+          "name": "Naga: O3"
+        },
+        "o3-mini-2025-01-31": {
+          "name": "Naga: O3 Mini"
+        },
+        "o4-mini-2025-04-16": {
+          "name": "Naga: O4 Mini"
+        },
+        "open-mistral-nemo-2407": {
+          "name": "Naga: Open Mistral Nemo 2407"
+        },
+        "phi-4": {
+          "name": "Naga: Phi-4"
+        },
+        "pixtral-large-2411": {
+          "name": "Naga: Pixtral Large 2411"
+        },
+        "qwen-2.5-72b-instruct": {
+          "name": "Naga: Qwen 2.5 72B Instruct"
+        },
+        "qwen-max": {
+          "name": "Naga: Qwen Max"
+        },
+        "qwen-turbo": {
+          "name": "Naga: Qwen Turbo"
+        },
+        "qwen3-14b": {
+          "name": "Naga: Qwen3 14B"
+        },
+        "qwen3-235b-a22b": {
+          "name": "Naga: Qwen3 235B A22B"
+        },
+        "qwen3-235b-a22b-2507": {
+          "name": "Naga: Qwen3 235B A22B 2507"
+        },
+        "qwen3-235b-a22b-thinking-2507": {
+          "name": "Naga: Qwen3 235B A22B Thinking 2507"
+        },
+        "qwen3-30b-a3b": {
+          "name": "Naga: Qwen3 30B A3B"
+        },
+        "qwen3-32b": {
+          "name": "Naga: Qwen3 32B"
+        },
+        "qwen3-coder": {
+          "name": "Naga: Qwen3 Coder"
+        },
+        "qwen3-coder-plus": {
+          "name": "Naga: Qwen3 Coder Plus"
+        },
+        "qwen3-max": {
+          "name": "Naga: Qwen3 Max"
+        },
+        "qwen3-next-80b-a3b-instruct": {
+          "name": "Naga: Qwen3 Next 80B A3B Instruct"
+        },
+        "qwen3-next-80b-a3b-thinking": {
+          "name": "Naga: Qwen3 Next 80B A3B Thinking"
+        },
+        "qwen3-vl-235b-a22b-instruct": {
+          "name": "Naga: Qwen3 VL 235B A22B Instruct"
+        },
+        "qwen3-vl-235b-a22b-thinking": {
+          "name": "Naga: Qwen3 VL 235B A22B Thinking"
+        },
+        "qwq-32b": {
+          "name": "Naga: QwQ 32B"
         },
         "sonar": {
           "name": "Naga: Sonar"
         },
-        "gpt-4.1-2025-04-14": {
-          "name": "Naga: GPT-4.1"
+        "sonar-deep-research": {
+          "name": "Naga: Sonar Deep Research"
+        },
+        "sonar-pro": {
+          "name": "Naga: Sonar Pro"
+        },
+        "sonar-reasoning": {
+          "name": "Naga: Sonar Reasoning"
+        },
+        "sonar-reasoning-pro": {
+          "name": "Naga: Sonar Reasoning Pro"
+        },
+        "sonar-reasoning:free": {
+          "name": "Naga: Sonar Reasoning (Free)"
+        },
+        "sonar:free": {
+          "name": "Naga: Sonar (Free)"
+        },
+        "venice-uncensored": {
+          "name": "Naga: Venice Uncensored"
+        },
+        "wizardlm-2-8x22b": {
+          "name": "Naga: WizardLM 2 8x22B"
         }
+      },
+      "name": "NagaAC Proxy",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://api.naga.ac/v1"
+      }
+    },
+    "ollama": {
+      "models": {
+        "qwen2.5-coder": {
+          "_launch": true,
+          "name": "qwen2.5-coder"
+        },
+        "qwen3-vl:8b": {
+          "_launch": true,
+          "name": "qwen3-vl:8b"
+        }
+      },
+      "name": "Ollama (local)",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
       }
     }
-  }
+  },
+  "theme": "gentleman"
 }
