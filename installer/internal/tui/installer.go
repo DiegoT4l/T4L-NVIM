@@ -255,7 +255,7 @@ func stepInstallDeps(m *Model) error {
 			"Failed to update apt package list",
 			result.Error)
 	}
-	result = system.RunSudo("apt-get install -y build-essential curl file git unzip fontconfig", nil)
+	result = system.RunSudo("apt-get install -y build-essential curl file git unzip fontconfig procps", nil)
 	if result.Error != nil {
 		return wrapStepError("deps", "Install Dependencies",
 			"Failed to install base dependencies on Debian/Ubuntu",
@@ -1039,74 +1039,29 @@ func stepInstallNvim(m *Model) error {
 			err)
 	}
 
-	// Install Claude Code (optional, don't fail on error)
+	// Install Claude Code CLI (optional, don't fail on error)
 	// Skip on Termux - Claude Code doesn't support Android
 	if !m.SystemInfo.IsTermux {
-		SendLog(stepID, "Installing Claude Code (optional)...")
+		SendLog(stepID, "Installing Claude Code CLI (optional)...")
 		system.RunWithLogs(`curl -fsSL https://claude.ai/install.sh | bash`, nil, func(line string) {
 			SendLog(stepID, line)
 		})
+		// AI tool configs are managed by gentle-ai (https://github.com/gentleman-programming/gentle-ai)
 	} else {
 		SendLog(stepID, "Skipping Claude Code (not supported on Termux)")
 	}
 
-	// Configure Claude Code
-	SendLog(stepID, "Configuring Claude Code...")
-	claudeDir := filepath.Join(homeDir, ".claude")
-	system.EnsureDir(claudeDir)
-	system.EnsureDir(filepath.Join(claudeDir, "output-styles"))
-	system.EnsureDir(filepath.Join(claudeDir, "skills"))
-	system.CopyFile(filepath.Join(repoDir, "GentlemanClaude/CLAUDE.md"), filepath.Join(claudeDir, "CLAUDE.md"))
-	system.CopyFile(filepath.Join(repoDir, "GentlemanClaude/settings.json"), filepath.Join(claudeDir, "settings.json"))
-	system.CopyFile(filepath.Join(repoDir, "GentlemanClaude/statusline.sh"), filepath.Join(claudeDir, "statusline.sh"))
-	system.Run(fmt.Sprintf("chmod +x %s", filepath.Join(claudeDir, "statusline.sh")), nil)
-	system.CopyFile(filepath.Join(repoDir, "GentlemanClaude/output-styles/gentleman.md"), filepath.Join(claudeDir, "output-styles/gentleman.md"))
-	system.CopyFile(filepath.Join(repoDir, "GentlemanClaude/mcp-servers.template.json"), filepath.Join(claudeDir, "mcp-servers.template.json"))
-	system.CopyFile(filepath.Join(repoDir, "GentlemanClaude/tweakcc-theme.json"), filepath.Join(claudeDir, "tweakcc-theme.json"))
-	// Copy skills (excluding prowler-* which are work-specific)
-	skillsToCopy := []string{"ai-sdk-5", "django-drf", "jira-epic", "jira-task", "nextjs-15", "playwright", "pr-review", "pytest", "react-19", "skill-creator", "tailwind-4", "typescript", "zod-4", "zustand-5"}
-	for _, skill := range skillsToCopy {
-		skillSrc := filepath.Join(repoDir, "GentlemanClaude/skills", skill)
-		skillDst := filepath.Join(claudeDir, "skills", skill)
-		system.CopyDir(skillSrc, skillDst)
-	}
-	SendLog(stepID, "⚙️ Copied CLAUDE.md")
-	SendLog(stepID, "📊 Copied statusline.sh")
-	SendLog(stepID, "🎨 Copied output styles")
-	SendLog(stepID, "🧠 Copied Claude skills")
-
-	// Apply tweakcc theme (only if Claude Code was installed)
-	if !m.SystemInfo.IsTermux {
-		SendLog(stepID, "Applying tweakcc theme...")
-		result := system.Run("npx tweakcc --apply", nil)
-		if result.Error == nil {
-			SendLog(stepID, "🎨 Applied tweakcc theme")
-		} else {
-			SendLog(stepID, "⚠️ Could not apply tweakcc theme (run 'npx tweakcc --apply' manually)")
-		}
-	}
-
-	// Install OpenCode (optional, don't fail on error)
+	// Install OpenCode CLI (optional, don't fail on error)
 	// Skip on Termux - OpenCode doesn't support Android
 	if !m.SystemInfo.IsTermux {
-		SendLog(stepID, "Installing OpenCode (optional)...")
+		SendLog(stepID, "Installing OpenCode CLI (optional)...")
 		system.RunWithLogs(`curl -fsSL https://opencode.ai/install | bash`, nil, func(line string) {
 			SendLog(stepID, line)
 		})
+		// AI tool configs are managed by gentle-ai (https://github.com/gentleman-programming/gentle-ai)
 	} else {
 		SendLog(stepID, "Skipping OpenCode (not supported on Termux)")
 	}
-
-	// Configure OpenCode
-	SendLog(stepID, "Configuring OpenCode...")
-	openCodeDir := filepath.Join(homeDir, ".config/opencode")
-	system.EnsureDir(openCodeDir)
-	system.EnsureDir(filepath.Join(openCodeDir, "themes"))
-	system.EnsureDir(filepath.Join(openCodeDir, "skill"))
-	system.CopyFile(filepath.Join(repoDir, "GentlemanOpenCode/opencode.json"), filepath.Join(openCodeDir, "opencode.json"))
-	system.CopyFile(filepath.Join(repoDir, "GentlemanOpenCode/themes/gentleman.json"), filepath.Join(openCodeDir, "themes/gentleman.json"))
-	system.CopyDir(filepath.Join(repoDir, "GentlemanOpenCode", "skill"), filepath.Join(openCodeDir, "skill"))
-	SendLog(stepID, "🧠 Copied OpenCode skills")
 
 	SendLog(stepID, "✓ Neovim configured with Gentleman setup")
 	return nil

@@ -1,16 +1,13 @@
 layout {
-    tab name="nvim" focus=true {
-        pane
-    }
-
-    tab name="shell" {
+    tab name="base" focus=true {
         pane
     }
 
     default_tab_template {
         pane size=1 borderless=true {
             plugin location="file:~/.config/zellij/plugins/zjstatus.wasm" {
-              format_left   "{mode} #[fg=#76946A,bold]{session}{tabs}"
+              format_left   "{mode} #[fg=#76946A,bold]{tabs}"
+              format_center "#[fg=#76946A,bold]{session}"
               format_right  "{command_git_branch} {datetime}"
               format_space  ""
 
@@ -19,13 +16,11 @@ layout {
               border_format   "#[fg=#C0A36E]{char}"
               border_position "top"
 
-              hide_frame_for_single_pane "true"
-
               mode_normal  "#[bg=#DCD7BA] "
               mode_tmux    "#[bg=#FFA066] "
 
-              tab_normal   "#[fg=#54546D] {name} "
-              tab_active   "#[fg=#C34043,bold,italic] {name} "
+              tab_normal   "#[fg=#54546D]{index}:{name} "
+              tab_active   "#[fg=#C65C5B,bold,italic]{index}:{name} "
 
               command_git_branch_command     "git rev-parse --abbrev-ref HEAD"
               command_git_branch_format      "#[fg=#76946A] {stdout} "
